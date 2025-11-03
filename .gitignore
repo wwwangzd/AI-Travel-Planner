@@ -35,3 +35,7 @@ coverage/
 # 临时文件
 *.tmp
 *.temp
+
+# 项目笔记和个人文档
+need.txt
+prompt.txt
