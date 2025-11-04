@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import { xfVoiceService } from '../services/voiceService';
-import { llmService } from '../services/llmService';
 
 // 配置 multer 用于处理文件上传
 const upload = multer({
@@ -41,33 +40,6 @@ export class VoiceController {
             res.status(500).json({
                 success: false,
                 error: error.message || 'Failed to recognize voice'
-            });
-        }
-    }
-
-    async parseExpense(req: Request, res: Response) {
-        try {
-            const { text } = req.body;
-
-            if (!text) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Text is required'
-                });
-            }
-
-            // 使用 LLM 解析费用信息
-            const expense = await llmService.parseExpenseFromVoice(text);
-
-            res.json({
-                success: true,
-                data: expense
-            });
-        } catch (error: any) {
-            console.error('Parse expense error:', error);
-            res.status(500).json({
-                success: false,
-                error: error.message || 'Failed to parse expense'
             });
         }
     }

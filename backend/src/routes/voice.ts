@@ -3,7 +3,7 @@ import { voiceController } from '../controllers/voiceController';
 
 const router = Router();
 
+// 语音识别
 router.post('/recognize', voiceController.uploadMiddleware, voiceController.recognize.bind(voiceController));
-router.post('/parse-expense', voiceController.parseExpense.bind(voiceController));
 
 export default router;

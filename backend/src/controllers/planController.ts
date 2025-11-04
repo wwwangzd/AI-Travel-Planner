@@ -4,34 +4,76 @@ import { supabase } from '../database/supabase';
 import { llmService } from '../services/llmService';
 import { AuthRequest } from '../middleware/auth';
 
+// 提取旅行需求
+const extractSchema = z.object({
+    userInput: z.string()
+});
+
+// 生成旅行计划
 const generatePlanSchema = z.object({
     destination: z.string(),
     startDate: z.string(),
     endDate: z.string(),
-    budget: z.number().optional(),
-    travelersCount: z.number().default(1),
-    preferences: z.record(z.any()).optional()
-});
-
-const updatePlanSchema = z.object({
-    title: z.string().optional(),
-    destination: z.string().optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    budget: z.number().optional(),
-    travelersCount: z.number().optional(),
-    preferences: z.record(z.any()).optional(),
-    status: z.string().optional()
+    budget: z.number(),
+    travelersCount: z.number(),
+    preferences: z.object({
+        interests: z.array(z.string()),
+        specialNeeds: z.array(z.string())
+    })
 });
 
 export class PlanController {
+    /**
+     * POST /api/plans/extract - 从自然语言提取旅行需求
+     */
+    async extractTravelInfo(req: AuthRequest, res: Response) {
+        try {
+            const { userInput } = extractSchema.parse(req.body);
+
+            // 使用 LLM 提取结构化信息
+            const extractedInfo = await llmService.extractTravelInfo(userInput);
+
+            res.json({
+                success: true,
+                data: extractedInfo
+            });
+        } catch (error: any) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Validation error',
+                    details: error.errors
+                });
+            }
+            console.error('Extract travel info error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to extract travel information'
+            });
+        }
+    }
+
+    /**
+     * POST /api/plans/generate - 生成旅行计划
+     */
     async generatePlan(req: AuthRequest, res: Response) {
         try {
             const userId = req.user!.id;
             const params = generatePlanSchema.parse(req.body);
 
+            // 计算天数
+            const start = new Date(params.startDate);
+            const end = new Date(params.endDate);
+            const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+            // 构造完整的旅行信息
+            const travelInfo = {
+                ...params,
+                duration
+            };
+
             // 使用 LLM 生成行程计划
-            const generatedPlan = await llmService.generateTravelPlan(params);
+            const generatedPlan = await llmService.generateTravelPlan(travelInfo);
 
             // 保存旅行计划
             const { data: plan, error: planError } = await supabase
@@ -43,8 +85,9 @@ export class PlanController {
                     start_date: params.startDate,
                     end_date: params.endDate,
                     budget: params.budget,
+                    budget_breakdown: generatedPlan.budgetBreakdown,
                     travelers_count: params.travelersCount,
-                    preferences: params.preferences || {},
+                    preferences: params.preferences,
                     status: 'draft'
                 })
                 .select()
@@ -54,25 +97,21 @@ export class PlanController {
                 throw planError;
             }
 
-            // 保存行程详情
+            // 保存每日行程详情
             const itineraryItems = [];
-            for (const day of generatedPlan.dailyItinerary) {
-                for (let i = 0; i < day.items.length; i++) {
-                    const item = day.items[i];
+            for (const dailyPlan of generatedPlan.dailyItinerary) {
+                for (let i = 0; i < dailyPlan.items.length; i++) {
+                    const item = dailyPlan.items[i];
                     itineraryItems.push({
                         plan_id: plan.id,
-                        day_number: day.day,
+                        day_number: dailyPlan.day,
+                        day_theme: dailyPlan.theme || null,
                         item_type: item.type,
                         title: item.title,
-                        description: item.description,
-                        location: item.location ? {
-                            address: item.location,
-                            lat: null,
-                            lng: null
-                        } : null,
+                        description: item.description || null,
+                        location: item.location || null,
                         start_time: item.time || null,
-                        estimated_cost: item.estimatedCost || 0,
-                        booking_info: { tips: item.tips },
+                        estimated_cost: item.cost || 0,
                         sort_order: i
                     });
                 }
@@ -94,10 +133,8 @@ export class PlanController {
                 data: {
                     planId: plan.id,
                     title: generatedPlan.title,
-                    overview: generatedPlan.overview,
                     itinerary: generatedPlan.dailyItinerary,
-                    budgetBreakdown: generatedPlan.budgetBreakdown,
-                    tips: generatedPlan.tips
+                    budgetBreakdown: generatedPlan.budgetBreakdown
                 }
             });
         } catch (error: any) {
@@ -116,6 +153,9 @@ export class PlanController {
         }
     }
 
+    /**
+     * GET /api/plans - 获取用户所有旅行计划
+     */
     async getPlans(req: AuthRequest, res: Response) {
         try {
             const userId = req.user!.id;
@@ -142,6 +182,9 @@ export class PlanController {
         }
     }
 
+    /**
+     * GET /api/plans/:id - 获取指定旅行计划详情
+     */
     async getPlan(req: AuthRequest, res: Response) {
         try {
             const userId = req.user!.id;
@@ -174,7 +217,7 @@ export class PlanController {
                 throw itemsError;
             }
 
-            // 组织行程数据
+            // 按天组织行程数据
             const dailyItinerary: any = {};
             items?.forEach(item => {
                 if (!dailyItinerary[item.day_number]) {
@@ -201,61 +244,9 @@ export class PlanController {
         }
     }
 
-    async updatePlan(req: AuthRequest, res: Response) {
-        try {
-            const userId = req.user!.id;
-            const { id } = req.params;
-            const updates = updatePlanSchema.parse(req.body);
-
-            // 验证计划所有权
-            const { data: existingPlan } = await supabase
-                .from('travel_plans')
-                .select('id')
-                .eq('id', id)
-                .eq('user_id', userId)
-                .single();
-
-            if (!existingPlan) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Plan not found'
-                });
-            }
-
-            // 更新计划
-            const { data: plan, error } = await supabase
-                .from('travel_plans')
-                .update({
-                    ...updates,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', id)
-                .select()
-                .single();
-
-            if (error) {
-                throw error;
-            }
-
-            res.json({
-                success: true,
-                data: { plan }
-            });
-        } catch (error: any) {
-            if (error instanceof z.ZodError) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Validation error',
-                    details: error.errors
-                });
-            }
-            res.status(500).json({
-                success: false,
-                error: error.message || 'Failed to update plan'
-            });
-        }
-    }
-
+    /**
+     * DELETE /api/plans/:id - 删除旅行计划
+     */
     async deletePlan(req: AuthRequest, res: Response) {
         try {
             const userId = req.user!.id;
