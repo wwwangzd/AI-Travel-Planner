@@ -67,11 +67,11 @@ CREATE TABLE IF NOT EXISTS expenses (
 -- 创建用户偏好表
 CREATE TABLE IF NOT EXISTS user_preferences (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  preference_key VARCHAR(100) NOT NULL,
-  preference_value JSONB,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, preference_key)
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  interests TEXT[] DEFAULT '{}',
+  special_needs TEXT[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 禁用 RLS（因为我们使用应用层认证）

@@ -118,21 +118,16 @@ export interface ExpenseAnalysis {
 
 // ============= 用户偏好 =============
 export interface UserPreferences {
-    interests: string[];            // 兴趣爱好
-    accommodationLevel: string;     // 住宿标准
-    transportPreference: string;    // 交通偏好
-    budgetRange: {
-        min: number;
-        max: number;
-    };
-    travelPace: string;             // 旅行节奏
+    interests: string[];            // 兴趣偏好，如 ["美食", "动漫", "历史文化", "自然风光"]
+    specialNeeds: string[];         // 特殊需求，如 ["带孩子", "带老人", "无障碍需求"]
 }
 
 export interface UserPreference {
     id: string;
     user_id: string;
-    preference_key: string;
-    preference_value: Record<string, any>;
+    interests: string[];
+    special_needs: string[];
+    created_at: string;
     updated_at: string;
 }
 

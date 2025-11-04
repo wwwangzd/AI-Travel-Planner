@@ -6,6 +6,7 @@ import planRoutes from './routes/plans';
 import expenseRoutes from './routes/expenses';
 import mapRoutes from './routes/map';
 import voiceRoutes from './routes/voice';
+import preferenceRoutes from './routes/preferences';
 import { errorHandler } from './middleware/errorHandler';
 
 // 加载环境变量
@@ -34,6 +35,7 @@ app.use('/api/plans', planRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/map', mapRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/preferences', preferenceRoutes);
 
 // 404 处理
 app.use((req, res) => {

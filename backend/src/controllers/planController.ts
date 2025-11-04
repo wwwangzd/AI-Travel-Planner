@@ -19,7 +19,7 @@ const generatePlanSchema = z.object({
     preferences: z.object({
         interests: z.array(z.string()),
         specialNeeds: z.array(z.string())
-    })
+    }).optional() // 允许不传，会自动从用户偏好加载
 });
 
 export class PlanController {
@@ -61,6 +61,29 @@ export class PlanController {
             const userId = req.user!.id;
             const params = generatePlanSchema.parse(req.body);
 
+            // 如果没有传入偏好，则从用户默认偏好加载
+            let preferences = params.preferences;
+            if (!preferences) {
+                const { data: userPrefs } = await supabase
+                    .from('user_preferences')
+                    .select('interests, special_needs')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (userPrefs) {
+                    preferences = {
+                        interests: userPrefs.interests || [],
+                        specialNeeds: userPrefs.special_needs || []
+                    };
+                } else {
+                    // 如果没有设置偏好，使用空数组
+                    preferences = {
+                        interests: [],
+                        specialNeeds: []
+                    };
+                }
+            }
+
             // 计算天数
             const start = new Date(params.startDate);
             const end = new Date(params.endDate);
@@ -68,7 +91,12 @@ export class PlanController {
 
             // 构造完整的旅行信息
             const travelInfo = {
-                ...params,
+                destination: params.destination,
+                startDate: params.startDate,
+                endDate: params.endDate,
+                budget: params.budget,
+                travelersCount: params.travelersCount,
+                preferences,
                 duration
             };
 
@@ -87,7 +115,7 @@ export class PlanController {
                     budget: params.budget,
                     budget_breakdown: generatedPlan.budgetBreakdown,
                     travelers_count: params.travelersCount,
-                    preferences: params.preferences,
+                    preferences: preferences,
                     status: 'draft'
                 })
                 .select()

@@ -4,7 +4,12 @@ AI 旅行规划师后端 API 服务
 
 ## 项目概述
 
-本项目是一个基于 AI 的旅行规划后端服务，支持智能行程规划、费用管理、语音交互等功能。
+本项目是一个基于 AI 的智能旅行规划后端服务，支持：
+- 🎤 智能语音输入和自然语言理解
+- 🗺️ AI 驱动的个性化行程规划
+- 💰 智能费用预算管理和分析
+- 👤 用户偏好学习和自动应用
+- 📍 地图服务集成（地点搜索、路线规划）
 
 ## 技术栈
 
@@ -99,7 +104,12 @@ node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
 
 ### 4. 初始化数据库
 
-在 Supabase 控制台的 SQL Editor 中执行 `src/database/schema.sql` 文件内容。
+在 Supabase 控制台的 SQL Editor 中依次执行：
+
+1. **基础表结构**：执行 `src/database/schema.sql` 文件内容
+2. **偏好表迁移**（如果已有旧版本）：执行 `src/database/migration_update_preferences.sql` 文件内容
+
+> 如果是全新项目，只需执行 `schema.sql` 即可。
 
 ### 5. 启动开发服务器
 
@@ -150,32 +160,42 @@ docker-compose down
 
 ## API 接口
 
-详细的 API 文档请查看 `../API测试文档.md`
+详细的 API 接口设计和说明请查看项目根目录下的 `设计文档.md`
 
 ### 主要接口模块
 
 - **认证模块** (`/api/auth`)
-  - 用户注册、登录
-  - 获取用户信息
+  - `POST /register` - 用户注册
+  - `POST /login` - 用户登录
+  - `GET /profile` - 获取用户信息
+
+- **用户偏好模块** (`/api/preferences`)
+  - `GET /` - 获取用户偏好
+  - `PUT /` - 更新用户偏好
+  - `POST /learn` - 从历史计划学习偏好
 
 - **行程规划模块** (`/api/plans`)
-  - 从自然语言提取旅行需求
-  - 生成个性化旅行计划
-  - 管理旅行计划（查询、更新、删除）
+  - `POST /extract` - 从自然语言提取旅行需求
+  - `POST /generate` - 生成个性化旅行计划
+  - `GET /` - 获取所有旅行计划
+  - `GET /:id` - 获取单个计划详情
+  - `DELETE /:id` - 删除旅行计划
 
 - **费用管理模块** (`/api/expenses`)
-  - 添加费用记录
-  - 查询费用统计
-  - AI 费用分析
+  - `POST /parse` - 从自然语言解析费用信息
+  - `POST /` - 添加费用记录
+  - `GET /:planId` - 获取费用记录列表
+  - `GET /:planId/summary` - 获取费用统计汇总
+  - `POST /:planId/analyze` - AI 费用分析
+  - `DELETE /:id` - 删除费用记录
 
 - **语音识别模块** (`/api/voice`)
-  - 语音识别
-  - 语音费用解析
+  - `POST /recognize` - 语音识别
 
 - **地图服务模块** (`/api/map`)
-  - 地点搜索
-  - 路线规划
-  - 地理编码
+  - `GET /search` - 地点搜索
+  - `GET /route` - 路线规划
+  - `GET /geocode` - 地理编码
 
 ## 项目结构
 
@@ -183,27 +203,30 @@ docker-compose down
 backend/
 ├── src/
 │   ├── controllers/          # 业务控制器
-│   │   ├── authController.ts       # 用户认证
-│   │   ├── planController.ts       # 行程规划
-│   │   ├── expenseController.ts    # 费用管理
-│   │   ├── voiceController.ts      # 语音识别
-│   │   └── mapController.ts        # 地图服务
+│   │   ├── authController.ts         # 用户认证
+│   │   ├── planController.ts         # 行程规划
+│   │   ├── expenseController.ts      # 费用管理
+│   │   ├── preferenceController.ts   # 用户偏好
+│   │   ├── voiceController.ts        # 语音识别
+│   │   └── mapController.ts          # 地图服务
 │   ├── services/             # 外部服务
-│   │   ├── llmService.ts           # LLM 服务
-│   │   ├── voiceService.ts         # 语音服务
-│   │   └── mapService.ts           # 地图服务
+│   │   ├── llmService.ts             # LLM 服务
+│   │   ├── voiceService.ts           # 语音服务
+│   │   └── mapService.ts             # 地图服务
 │   ├── middleware/           # 中间件
-│   │   ├── auth.ts                 # JWT 认证
-│   │   └── errorHandler.ts         # 错误处理
+│   │   ├── auth.ts                   # JWT 认证
+│   │   └── errorHandler.ts           # 错误处理
 │   ├── routes/               # 路由
 │   │   ├── auth.ts
 │   │   ├── plans.ts
 │   │   ├── expenses.ts
+│   │   ├── preferences.ts
 │   │   ├── voice.ts
 │   │   └── map.ts
 │   ├── database/             # 数据库
-│   │   ├── supabase.ts             # Supabase 客户端
-│   │   └── schema.sql              # 数据库表结构
+│   │   ├── supabase.ts                       # Supabase 客户端
+│   │   ├── schema.sql                        # 数据库表结构
+│   │   └── migration_update_preferences.sql  # 偏好表迁移
 │   ├── types/                # 类型定义
 │   │   └── models.ts
 │   └── index.ts              # 应用入口
@@ -212,45 +235,6 @@ backend/
 ├── Dockerfile
 └── README.md
 ```
-
-## 核心功能
-
-### 1. 智能行程规划
-
-- **两步式交互流程**：
-  1. 从用户自然语言输入中提取结构化信息
-  2. 基于确认后的信息生成详细行程计划
-  
-- **支持的输入方式**：
-  - 文字输入
-  - 语音输入（通过科大讯飞）
-
-- **生成内容**：
-  - 每日详细行程（交通、住宿、景点、餐饮）
-  - 预算分配建议
-  - 地理位置信息
-
-### 2. 费用管理
-
-- 支持语音和文字添加费用记录
-- 实时统计和分类展示
-- AI 费用分析：
-  - 预算对比
-  - 消费趋势分析
-  - 节省建议
-  - 超支预警
-
-### 3. 类型标签规范
-
-系统统一使用中文类型标签：
-
-- **交通**：机票、火车、出租车、公交等
-- **住宿**：酒店、民宿等
-- **餐饮**：早餐、午餐、晚餐、小吃等
-- **景点**：门票、导游等
-- **其他**：购物、娱乐等其他支出
-
-所有 API 输入输出、数据库存储、LLM 返回均使用中文标签。
 
 ## 安全注意事项
 
@@ -262,19 +246,10 @@ backend/
 - **绝对不要**将 API Key 硬编码到代码中
 - service_role key 只能在后端使用，不要暴露给前端
 
-## 常见问题
+## 相关文档
 
-### Q: 为什么使用 service_role key 而不是 anon key？
-
-A: 本项目使用自定义 JWT 认证而非 Supabase Auth，需要使用 service_role key 绕过 Row Level Security (RLS)。权限控制在应用层实现。
-
-### Q: LLM 响应时间较长怎么办？
-
-A: 正常情况下生成行程需要 10-30 秒。建议在前端添加加载动画，并设置合理的超时时间（60 秒）。
-
-### Q: 如何测试 API？
-
-A: 推荐使用 Apifox、Postman 等工具，参考 `API测试文档.md` 中的测试用例。
+- **设计文档**：`../设计文档.md` - 完整的系统设计和 API 接口说明
+- **需求文档**：`../需求文档.md` - 项目功能需求
 
 ## 许可证
 
