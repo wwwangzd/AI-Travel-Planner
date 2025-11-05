@@ -1,0 +1,83 @@
+.plan-list-container {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.plan-list-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.plan-list-card h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.plan-card {
+  border-radius: 12px;
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.plan-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.plan-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.plan-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  color: #333;
+}
+
+.plan-card-content {
+  margin-bottom: 12px;
+}
+
+.plan-card-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.info-icon {
+  color: #667eea;
+  font-size: 16px;
+}
+
+.plan-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

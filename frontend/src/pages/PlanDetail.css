@@ -1,0 +1,182 @@
+.plan-detail-container {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.plan-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.plan-meta {
+  display: flex;
+  gap: 24px;
+  color: #8c8c8c;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.plan-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.main-content-row {
+  margin-bottom: 24px;
+}
+
+.map-card,
+.itinerary-card,
+.expense-card,
+.preferences-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: 100%;
+}
+
+.day-tabs {
+  padding: 0 16px;
+}
+
+.day-tabs .ant-tabs-nav {
+  margin: 0;
+  padding: 16px 0 0 0;
+}
+
+.day-content {
+  padding: 16px;
+}
+
+.day-theme {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.day-theme h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  font-size: 16px;
+}
+
+.itinerary-item {
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.itinerary-item:hover {
+  background: #f0f0f0;
+  transform: translateX(4px);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.item-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.item-description {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.expense-card {
+  margin-bottom: 24px;
+}
+
+.preferences-card {
+  margin-bottom: 24px;
+}
+
+.loading-container,
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .plan-title {
+    font-size: 22px;
+  }
+
+  .plan-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .map-card {
+    height: 400px !important;
+  }
+
+  .itinerary-card {
+    margin-top: 16px;
+  }
+}

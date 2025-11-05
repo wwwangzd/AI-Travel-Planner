@@ -1,0 +1,80 @@
+.expense-manager {
+  padding: 0;
+}
+
+.summary-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.budget-progress {
+  margin-top: 16px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.progress-percent {
+  font-weight: 600;
+  color: #333;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.expense-table {
+  background: white;
+  border-radius: 8px;
+}
+
+.analysis-content {
+  padding: 8px 0;
+}
+
+.suggestions-list {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.suggestions-list li {
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.category-analysis-item {
+  margin-bottom: 16px;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.category-header span {
+  font-weight: 500;
+  color: #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}
