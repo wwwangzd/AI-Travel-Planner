@@ -27,10 +27,6 @@ const MainLayout: React.FC = () => {
 
     const userMenu = (
         <Menu>
-            <Menu.Item key="profile" icon={<UserOutlined />} onClick={() => navigate('/preferences')}>
-                个人设置
-            </Menu.Item>
-            <Menu.Divider />
             <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
                 退出登录
             </Menu.Item>
@@ -42,11 +38,6 @@ const MainLayout: React.FC = () => {
             key: '/',
             icon: <HomeOutlined />,
             label: '首页',
-        },
-        {
-            key: '/create',
-            icon: <PlusOutlined />,
-            label: '创建计划',
         },
         {
             key: '/plans',

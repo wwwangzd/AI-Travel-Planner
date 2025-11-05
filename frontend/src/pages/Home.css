@@ -160,6 +160,7 @@
 
 .features-row {
   margin-top: 24px;
+  margin-bottom: 24px;
 }
 
 .feature-card {
@@ -169,29 +170,65 @@
   padding: 24px;
   transition: all 0.3s;
   height: 100%;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card:nth-child(1) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.feature-card:nth-child(2) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.feature-card:nth-child(3) {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover::before {
+  opacity: 1;
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .feature-icon {
-  font-size: 48px;
+  font-size: 56px;
   margin-bottom: 16px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .feature-card h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #333;
+  color: white;
 }
 
 .feature-card p {
-  color: #8c8c8c;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   font-size: 14px;
+  line-height: 1.6;
 }
 
 /* 响应式设计 */

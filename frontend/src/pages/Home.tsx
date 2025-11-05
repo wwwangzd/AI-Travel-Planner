@@ -38,24 +38,6 @@ const Home: React.FC = () => {
 
     const recentPlans = plans.slice(0, 3);
 
-    const getStatusColor = (status: string) => {
-        const colors: Record<string, string> = {
-            draft: 'default',
-            ongoing: 'processing',
-            completed: 'success',
-        };
-        return colors[status] || 'default';
-    };
-
-    const getStatusText = (status: string) => {
-        const texts: Record<string, string> = {
-            draft: '草稿',
-            ongoing: '进行中',
-            completed: '已完成',
-        };
-        return texts[status] || status;
-    };
-
     return (
         <div className="home-container">
             {/* 欢迎横幅 */}
@@ -63,7 +45,7 @@ const Home: React.FC = () => {
                 <div className="banner-content">
                     <h1 className="banner-title">开启你的智能旅行</h1>
                     <p className="banner-subtitle">
-                        使用AI技术，让旅行规划变得简单而有趣
+                        使用 AI 技术，让旅行规划变得简单而有趣
                     </p>
                     <Button
                         type="primary"
@@ -80,9 +62,34 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
+            {/* 功能特性 */}
+            <Row gutter={[16, 16]} className="features-row">
+                <Col xs={24} md={8}>
+                    <Card className="feature-card">
+                        <div className="feature-icon">🤖</div>
+                        <h3>智能规划</h3>
+                        <p>自动生成个性化旅行路线，省时省心</p>
+                    </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                    <Card className="feature-card">
+                        <div className="feature-icon">💰</div>
+                        <h3>预算管理</h3>
+                        <p>实时追踪开销，智能分析消费趋势</p>
+                    </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                    <Card className="feature-card">
+                        <div className="feature-icon">🎯</div>
+                        <h3>偏好学习</h3>
+                        <p>记录旅行偏好，提供精准推荐</p>
+                    </Card>
+                </Col>
+            </Row>
+
             {/* 统计卡片 */}
             <Row gutter={[16, 16]} className="stats-row">
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={8}>
                     <Card className="stat-card">
                         <Statistic
                             title="总计划数"
@@ -92,33 +99,29 @@ const Home: React.FC = () => {
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={8}>
                     <Card className="stat-card">
                         <Statistic
-                            title="进行中"
-                            value={plans.filter((p) => p.status === 'ongoing').length}
+                            title="旅行天数"
+                            value={plans.reduce((sum, p) => {
+                                const start = dayjs(p.start_date);
+                                const end = dayjs(p.end_date);
+                                return sum + end.diff(start, 'day') + 1;
+                            }, 0)}
                             prefix={<CalendarOutlined />}
                             valueStyle={{ color: '#52c41a' }}
+                            suffix="天"
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={8}>
                     <Card className="stat-card">
                         <Statistic
-                            title="已完成"
-                            value={plans.filter((p) => p.status === 'completed').length}
-                            prefix={<CalendarOutlined />}
+                            title="总预算"
+                            value={plans.reduce((sum, p) => sum + (p.budget || 0), 0)}
+                            prefix={<DollarOutlined />}
                             valueStyle={{ color: '#1890ff' }}
-                        />
-                    </Card>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                    <Card className="stat-card">
-                        <Statistic
-                            title="草稿"
-                            value={plans.filter((p) => p.status === 'draft').length}
-                            prefix={<CalendarOutlined />}
-                            valueStyle={{ color: '#8c8c8c' }}
+                            prefix="¥"
                         />
                     </Card>
                 </Col>
@@ -147,14 +150,7 @@ const Home: React.FC = () => {
                                 onClick={() => navigate(`/plans/${plan.id}`)}
                             >
                                 <List.Item.Meta
-                                    title={
-                                        <div className="plan-title">
-                                            <span>{plan.title}</span>
-                                            <Tag color={getStatusColor(plan.status)}>
-                                                {getStatusText(plan.status)}
-                                            </Tag>
-                                        </div>
-                                    }
+                                    title={<div className="plan-title">{plan.title}</div>}
                                     description={
                                         <div className="plan-description">
                                             <div className="plan-info">
@@ -192,31 +188,6 @@ const Home: React.FC = () => {
                     </Empty>
                 )}
             </Card>
-
-            {/* 功能特性 */}
-            <Row gutter={[16, 16]} className="features-row">
-                <Col xs={24} md={8}>
-                    <Card className="feature-card">
-                        <div className="feature-icon">🤖</div>
-                        <h3>智能规划</h3>
-                        <p>AI自动生成个性化旅行路线，省时省心</p>
-                    </Card>
-                </Col>
-                <Col xs={24} md={8}>
-                    <Card className="feature-card">
-                        <div className="feature-icon">🎤</div>
-                        <h3>语音输入</h3>
-                        <p>支持语音描述需求，轻松创建旅行计划</p>
-                    </Card>
-                </Col>
-                <Col xs={24} md={8}>
-                    <Card className="feature-card">
-                        <div className="feature-icon">💰</div>
-                        <h3>预算管理</h3>
-                        <p>实时追踪开销，AI分析消费趋势</p>
-                    </Card>
-                </Col>
-            </Row>
         </div>
     );
 };

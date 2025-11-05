@@ -56,24 +56,6 @@ const PlanList: React.FC = () => {
         });
     };
 
-    const getStatusColor = (status: string) => {
-        const colors: Record<string, string> = {
-            draft: 'default',
-            ongoing: 'processing',
-            completed: 'success',
-        };
-        return colors[status] || 'default';
-    };
-
-    const getStatusText = (status: string) => {
-        const texts: Record<string, string> = {
-            draft: '草稿',
-            ongoing: '进行中',
-            completed: '已完成',
-        };
-        return texts[status] || status;
-    };
-
     if (loading) {
         return (
             <div className="loading-container">
@@ -133,9 +115,6 @@ const PlanList: React.FC = () => {
                                 >
                                     <div className="plan-card-header">
                                         <h3 className="plan-card-title">{plan.title}</h3>
-                                        <Tag color={getStatusColor(plan.status)}>
-                                            {getStatusText(plan.status)}
-                                        </Tag>
                                     </div>
                                     <div className="plan-card-content">
                                         <div className="plan-card-info">

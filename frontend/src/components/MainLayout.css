@@ -64,6 +64,16 @@
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
+/* 修复折叠按钮背景颜色 */
+.main-sider .ant-layout-sider-trigger {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.main-sider .ant-layout-sider-trigger:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #65408d 100%);
+}
+
 .main-menu {
   height: 100%;
   border-right: 0;
