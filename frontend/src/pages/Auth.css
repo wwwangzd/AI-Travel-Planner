@@ -23,8 +23,116 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)" /></svg>');
-  opacity: 0.5;
+  opacity: 0.3;
+}
+
+/* 旅行元素动画 */
+.travel-icon {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.15);
+  animation: float 20s infinite ease-in-out;
+  font-size: 80px;
+}
+
+.travel-icon:nth-child(1) {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.travel-icon:nth-child(2) {
+  top: 70%;
+  left: 80%;
+  animation-delay: 5s;
+  font-size: 100px;
+}
+
+.travel-icon:nth-child(3) {
+  top: 30%;
+  right: 15%;
+  animation-delay: 8s;
+  font-size: 60px;
+}
+
+.travel-icon:nth-child(4) {
+  bottom: 20%;
+  left: 20%;
+  animation-delay: 3s;
+  font-size: 90px;
+}
+
+.travel-icon:nth-child(5) {
+  top: 50%;
+  left: 5%;
+  animation-delay: 12s;
+  font-size: 70px;
+}
+
+.travel-icon:nth-child(6) {
+  top: 15%;
+  right: 8%;
+  animation-delay: 15s;
+  font-size: 85px;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translateY(-30px) rotate(5deg);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateY(-60px) rotate(-5deg);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translateY(-30px) rotate(3deg);
+    opacity: 0.25;
+  }
+}
+
+/* 飞机飞行动画 */
+.plane-icon {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 40px;
+  animation: fly 30s linear infinite;
+}
+
+@keyframes fly {
+  0% {
+    left: -100px;
+    top: 20%;
+  }
+  100% {
+    left: calc(100% + 100px);
+    top: 60%;
+  }
+}
+
+/* 地图点阵背景 */
+.map-dots {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: mapMove 60s linear infinite;
+}
+
+@keyframes mapMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
 }
 
 .auth-card {
@@ -32,10 +140,22 @@
   max-width: 450px;
   margin: 20px;
   z-index: 1;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.98);
+  animation: cardFadeIn 0.8s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-header {
@@ -44,13 +164,23 @@
 }
 
 .auth-title {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 8px;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(118, 75, 162, 0.5));
+  }
 }
 
 .auth-subtitle {

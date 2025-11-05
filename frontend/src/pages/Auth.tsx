@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Tabs, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
+import {
+    UserOutlined,
+    LockOutlined,
+    MailOutlined,
+    GlobalOutlined,
+    EnvironmentOutlined,
+    CameraOutlined,
+    CompassOutlined,
+    RocketOutlined,
+    HeartOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
@@ -21,9 +31,11 @@ const Auth: React.FC = () => {
                 setAuth(response.data.user, response.data.token);
                 message.success('登录成功！');
                 navigate('/');
+            } else {
+                message.error(response.error || '登录失败');
             }
         } catch (error: any) {
-            console.error('Login failed:', error);
+            // 错误信息已在 axios 拦截器中通过 message.error 显示在界面上
         } finally {
             setLoading(false);
         }
@@ -37,9 +49,11 @@ const Auth: React.FC = () => {
                 setAuth(response.data.user, response.data.token);
                 message.success('注册成功！');
                 navigate('/');
+            } else {
+                message.error(response.error || '注册失败');
             }
         } catch (error: any) {
-            console.error('Register failed:', error);
+            // 错误信息已在 axios 拦截器中通过 message.error 显示在界面上
         } finally {
             setLoading(false);
         }
@@ -48,7 +62,21 @@ const Auth: React.FC = () => {
     return (
         <div className="auth-container">
             <div className="auth-background">
-                <div className="auth-overlay" />
+                <div className="auth-overlay">
+                    {/* 地图点阵背景 */}
+                    <div className="map-dots"></div>
+
+                    {/* 漂浮的旅行图标 */}
+                    <GlobalOutlined className="travel-icon" />
+                    <EnvironmentOutlined className="travel-icon" />
+                    <CameraOutlined className="travel-icon" />
+                    <CompassOutlined className="travel-icon" />
+                    <HeartOutlined className="travel-icon" />
+                    <RocketOutlined className="travel-icon" />
+
+                    {/* 飞机飞行 */}
+                    <RocketOutlined className="plane-icon" style={{ transform: 'rotate(-45deg)' }} />
+                </div>
             </div>
             <Card className="auth-card" bordered={false}>
                 <div className="auth-header">
