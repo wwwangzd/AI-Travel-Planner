@@ -22,6 +22,21 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
     const mapInstanceRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
     const [mapLoaded, setMapLoaded] = useState(false);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+    // 校验经纬度有效性，避免传入 NaN 导致 AMap 报错
+    const isValidLngLat = (lng?: any, lat?: any) => {
+        const lngNum = typeof lng === 'string' ? Number(lng) : lng;
+        const latNum = typeof lat === 'string' ? Number(lat) : lat;
+        return (
+            Number.isFinite(lngNum) &&
+            Number.isFinite(latNum) &&
+            lngNum >= -180 &&
+            lngNum <= 180 &&
+            latNum >= -90 &&
+            latNum <= 90
+        );
+    };
 
     // 加载高德地图脚本
     useEffect(() => {
@@ -54,9 +69,15 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
         }
 
         return () => {
-            // 清理地图实例
+            // 清理地图实例与监听器
+            if (resizeObserverRef.current && mapRef.current) {
+                try { resizeObserverRef.current.unobserve(mapRef.current); } catch { }
+                try { resizeObserverRef.current.disconnect(); } catch { }
+                resizeObserverRef.current = null;
+            }
             if (mapInstanceRef.current) {
-                mapInstanceRef.current.destroy();
+                try { mapInstanceRef.current.destroy(); } catch { }
+                mapInstanceRef.current = null;
             }
         };
     }, []);
@@ -74,6 +95,19 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
         });
 
         mapInstanceRef.current = map;
+
+        // 等下一帧触发一次 resize，避免容器初始为 0 尺寸导致 Pixel(NaN, NaN)
+        requestAnimationFrame(() => {
+            try { map.resize(); } catch { }
+        });
+
+        // 监听容器尺寸变化，自动触发地图自适应
+        if (mapRef.current && typeof ResizeObserver !== 'undefined') {
+            resizeObserverRef.current = new ResizeObserver(() => {
+                try { map.resize(); } catch { }
+            });
+            resizeObserverRef.current.observe(mapRef.current);
+        }
     }, [mapLoaded]);
 
     // 更新地图标记
@@ -96,15 +130,20 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
             );
         }
 
-        if (items.length === 0) return;
+        // 过滤无效经纬度的数据，避免 LngLat(Pixel) NaN 报错
+        const validItems = items.filter((item) =>
+            item.location && isValidLngLat(item.location.lng, item.location.lat)
+        );
 
-        const bounds = new window.AMap.Bounds();
+        if (validItems.length === 0) return;
 
         // 添加标记
-        items.forEach((item, index) => {
+        validItems.forEach((item, index) => {
             if (!item.location) return;
 
-            const position = [item.location.lng, item.location.lat];
+            const lng = typeof item.location.lng === 'string' ? Number(item.location.lng) : item.location.lng;
+            const lat = typeof item.location.lat === 'string' ? Number(item.location.lat) : item.location.lat;
+            const position = [lng, lat];
 
             // 根据类型选择图标颜色
             const getMarkerColor = (type?: string) => {
@@ -145,12 +184,15 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
 
             marker.setMap(mapInstanceRef.current);
             markersRef.current.push(marker);
-            bounds.extend(position);
         });
 
-        // 调整视野以包含所有标记
-        if (items.length > 0) {
-            mapInstanceRef.current.setBounds(bounds, false, [80, 80, 80, 80]);
+        // 调整视野以包含所有标记（使用 setFitView 更稳健）
+        if (markersRef.current.length > 0) {
+            try {
+                mapInstanceRef.current.setFitView(markersRef.current, false, [80, 80, 80, 80]);
+            } catch (e) {
+                try { mapInstanceRef.current.resize(); } catch { }
+            }
         }
     }, [itinerary, selectedDay, onMarkerClick]);
 

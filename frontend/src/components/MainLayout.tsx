@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import {
     HomeOutlined,
-    PlusOutlined,
     UnorderedListOutlined,
     SettingOutlined,
     UserOutlined,
