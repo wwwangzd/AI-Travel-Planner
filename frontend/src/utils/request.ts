@@ -4,7 +4,7 @@ import { message } from 'antd';
 // 创建 axios 实例
 const request = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
-    timeout: 60000, // 改为 60 秒，适应生成计划的长时间请求
+    timeout: 120000, // 改为 120 秒，适应生成计划的长时间请求
     headers: {
         'Content-Type': 'application/json',
     },

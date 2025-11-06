@@ -82,18 +82,63 @@ export class AmapService {
                 return null;
             }
 
-            const paths = route.paths || route.transits;
-            if (!paths || paths.length === 0) {
-                return null;
+            // driving / walking: 使用 route.paths[0]
+            if (mode === 'driving' || mode === 'walking') {
+                const paths = route.paths;
+                if (!paths || paths.length === 0) return null;
+                const firstPath = paths[0];
+
+                // 有些情况下 path.polyline 不存在，需从 steps 聚合
+                let mergedPolyline = '';
+                if (Array.isArray(firstPath.steps) && firstPath.steps.length > 0) {
+                    const parts: string[] = [];
+                    for (const s of firstPath.steps) {
+                        if (s.polyline) parts.push(s.polyline);
+                    }
+                    mergedPolyline = parts.join(';');
+                }
+
+                return {
+                    distance: firstPath.distance,
+                    duration: firstPath.duration,
+                    steps: firstPath.steps || [],
+                    polyline: firstPath.polyline || mergedPolyline || ''
+                };
             }
 
-            const firstPath = paths[0];
+            // transit: 使用 route.transits[0].segments，拼接步行与公交等折线
+            const transits = route.transits;
+            if (!transits || transits.length === 0) return null;
+            const firstTransit = transits[0];
+            const segments = firstTransit.segments || [];
+
+            const parts: string[] = [];
+            for (const seg of segments) {
+                // 步行部分
+                if (seg.walking && Array.isArray(seg.walking.steps)) {
+                    for (const st of seg.walking.steps) {
+                        if (st.polyline) parts.push(st.polyline);
+                    }
+                }
+                // 公交部分
+                if (seg.bus && Array.isArray(seg.bus.buslines)) {
+                    for (const line of seg.bus.buslines) {
+                        if (line.polyline) parts.push(line.polyline);
+                    }
+                }
+                // 地铁/铁路等（若有 polyline）
+                if (seg.railway && seg.railway.polyline) {
+                    parts.push(seg.railway.polyline);
+                }
+            }
+
+            const mergedPolyline = parts.join(';');
 
             return {
-                distance: firstPath.distance,
-                duration: firstPath.duration,
-                steps: firstPath.steps || [],
-                polyline: firstPath.polyline
+                distance: firstTransit.distance,
+                duration: firstTransit.duration,
+                steps: segments, // 前端如需更细可使用 segments
+                polyline: mergedPolyline || ''
             };
         } catch (error: any) {
             console.error('Amap Route Error:', error.message);

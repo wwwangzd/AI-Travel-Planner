@@ -9,7 +9,7 @@ export class LLMService {
   constructor() {
     this.apiKey = process.env.LLM_API_KEY!;
     this.baseUrl = process.env.LLM_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-    this.model = process.env.LLM_MODEL || 'qwen-plus';
+    this.model = process.env.LLM_MODEL || 'qwen-flash';
 
     if (!this.apiKey) {
       throw new Error('LLM_API_KEY is not set');
@@ -26,7 +26,6 @@ export class LLMService {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.5,
           response_format: { type: 'json_object' }
         },
         {
@@ -36,7 +35,6 @@ export class LLMService {
           }
         }
       );
-
       return response.data.choices[0].message.content;
     } catch (error: any) {
       console.error('LLM API Error:', error.response?.data || error.message);
@@ -86,9 +84,8 @@ export class LLMService {
 1. 返回严格的 JSON 格式数据
 2. 包含每日行程（每天3-4项）
 3. 考虑时间合理性和地理位置
-4. 严格控制在预算范围内
+4. 严格控制开销在预算范围内
 5. 考虑用户偏好
-6. type 字段必须使用中文：交通、住宿、餐饮、景点、其他
 
 返回格式：
 {
@@ -105,7 +102,7 @@ export class LLMService {
           "time": "HH:MM",
           "cost": 金额,
           "location": {"lat": 纬度, "lng": 经度},
-          "description": "描述（简短）"
+          "description": "简短描述"
         }
       ]
     }

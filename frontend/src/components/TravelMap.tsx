@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { message } from 'antd';
+import { message, Segmented, Button } from 'antd';
 import type { DailyItinerary, ItineraryItem } from '../types';
+import { mapApi } from '../api/map';
 import './TravelMap.css';
 
 interface TravelMapProps {
@@ -21,6 +22,10 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
+    const routePolylineRef = useRef<any | null>(null);
+    const selectedPointsRef = useRef<{ lng: number; lat: number; title?: string }[]>([]);
+    const [navMode, setNavMode] = useState<'walking' | 'transit' | 'driving'>('walking');
+    const [selecting, setSelecting] = useState<0 | 1 | 2>(0); // 0:未选,1:已选起点,2:已选起点终点
     const [mapLoaded, setMapLoaded] = useState(false);
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
@@ -118,6 +123,14 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
         markersRef.current.forEach((marker) => marker.setMap(null));
         markersRef.current = [];
 
+        // 清除旧路线与选点
+        if (routePolylineRef.current) {
+            try { routePolylineRef.current.setMap(null); } catch { }
+            routePolylineRef.current = null;
+        }
+        selectedPointsRef.current = [];
+        setSelecting(0);
+
         // 获取要显示的行程项
         let items: ItineraryItem[] = [];
         if (selectedDay !== undefined) {
@@ -176,9 +189,29 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
             marker.setContent(content);
 
             // 点击事件
-            marker.on('click', () => {
+            marker.on('click', async () => {
                 if (onMarkerClick) {
                     onMarkerClick(item);
+                }
+
+                // 导航选点：先选起点，再选终点
+                const point = { lng, lat, title: item.title };
+                const curr = selectedPointsRef.current;
+                if (curr.length < 1) {
+                    selectedPointsRef.current = [point];
+                    setSelecting(1);
+                    message.info(`已选择起点：${item.title}`);
+                } else if (curr.length === 1) {
+                    const last = curr[0];
+                    if (last.lng === point.lng && last.lat === point.lat) return;
+                    selectedPointsRef.current = [last, point];
+                    setSelecting(2);
+                    await drawRoute();
+                } else {
+                    // 已有两点，则将第二点作为新起点
+                    selectedPointsRef.current = [curr[1], point];
+                    setSelecting(2);
+                    await drawRoute();
                 }
             });
 
@@ -196,6 +229,76 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
         }
     }, [itinerary, selectedDay, onMarkerClick]);
 
+    // 绘制路线（使用后端聚合后的 data.route.polyline）
+    const drawRoute = async () => {
+        if (!mapInstanceRef.current) return;
+        const pts = selectedPointsRef.current;
+        if (pts.length < 2) return;
+        const [start, end] = pts;
+
+        try {
+            const origin = `${start.lng},${start.lat}`; // lng,lat 顺序
+            const destination = `${end.lng},${end.lat}`;
+            const resp = await mapApi.getRoute({ origin, destination, mode: navMode });
+
+            if (!resp.success || !resp.data || !(resp.data as any).route) {
+                message.error('路线规划失败');
+                return;
+            }
+            const route = (resp.data as any).route;
+            const polylineStr: string | undefined = route.polyline;
+            if (!polylineStr) {
+                message.warning('未获取到有效路线');
+                return;
+            }
+
+            const path = polylineStr
+                .split(';')
+                .map((p: string) => p.split(',').map(Number))
+                .filter((arr: number[]) => arr.length === 2 && arr.every(Number.isFinite));
+            if (!path.length) {
+                message.warning('未获取到有效路线');
+                return;
+            }
+
+            // 清除旧路线
+            if (routePolylineRef.current) {
+                try { routePolylineRef.current.setMap(null); } catch { }
+                routePolylineRef.current = null;
+            }
+
+            // 绘制新路线
+            const polyline = new window.AMap.Polyline({
+                path: path.map(([lng, lat]: number[]) => [lng, lat]),
+                strokeColor: '#667eea',
+                strokeWeight: 5,
+                strokeOpacity: 0.9,
+            });
+            polyline.setMap(mapInstanceRef.current);
+            routePolylineRef.current = polyline;
+
+            try {
+                mapInstanceRef.current.setFitView([polyline], false, [80, 80, 80, 80]);
+            } catch { }
+
+            // 绘制完成后自动清空起止点选择，保留已绘制的路线
+            selectedPointsRef.current = [];
+            setSelecting(0);
+            message.success('已绘制路线，起止点已清空');
+        } catch (e) {
+            console.error('drawRoute error', e);
+            message.error('路线规划请求失败');
+        }
+    };
+
+    // 切换模式时，若已选两点则重绘
+    useEffect(() => {
+        if (selecting === 2) {
+            drawRoute();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navMode]);
+
     return (
         <div className="travel-map-container">
             {!mapLoaded && (
@@ -205,6 +308,37 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
                 </div>
             )}
             <div ref={mapRef} className="travel-map" />
+            {/* 导航控制面板 */}
+            <div className="map-controls">
+                <div className="mode-switch">
+                    <Segmented
+                        size="small"
+                        value={navMode}
+                        onChange={(val) => setNavMode(val as any)}
+                        options={[
+                            { label: '步行', value: 'walking' },
+                            { label: '公交', value: 'transit' },
+                            { label: '驾车', value: 'driving' },
+                        ]}
+                    />
+                </div>
+                <div className="selection-hint">
+                    {selecting === 0 && <span>点击地图标记选择起点</span>}
+                    {selecting === 1 && <span>已选起点，点击另一标记选择终点</span>}
+                    {selecting === 2 && <span>已绘制起终点路线</span>}
+                </div>
+                <div>
+                    <Button size="small" onClick={() => {
+                        selectedPointsRef.current = [];
+                        setSelecting(0);
+                        if (routePolylineRef.current) {
+                            try { routePolylineRef.current.setMap(null); } catch { }
+                            routePolylineRef.current = null;
+                        }
+                        message.success('已清空路线');
+                    }}>清空路线</Button>
+                </div>
+            </div>
         </div>
     );
 };

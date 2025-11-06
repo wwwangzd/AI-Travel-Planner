@@ -96,19 +96,73 @@ const CreatePlan: React.FC = () => {
         }
     };
 
+    // 将任意音频 Blob 转为 16kHz 单声道 PCM 原始数据
+    const convertToPCM16k = async (blob: Blob): Promise<Blob> => {
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+
+        // 仅取第一个声道
+        const channelData = decodedBuffer.getChannelData(0);
+        const sourceSampleRate = decodedBuffer.sampleRate;
+        const targetSampleRate = 16000;
+
+        // 若采样率已为 16k，直接使用；否则进行重采样（简单均值法，避免引入重型依赖）
+        let floatData: Float32Array;
+        if (sourceSampleRate === targetSampleRate) {
+            floatData = channelData;
+        } else {
+            const ratio = sourceSampleRate / targetSampleRate;
+            const newLength = Math.round(channelData.length / ratio);
+            floatData = new Float32Array(newLength);
+            let offsetBuffer = 0;
+            for (let i = 0; i < newLength; i++) {
+                const nextOffsetBuffer = Math.round((i + 1) * ratio);
+                let accum = 0;
+                let count = 0;
+                for (let j = offsetBuffer; j < nextOffsetBuffer && j < channelData.length; j++) {
+                    accum += channelData[j];
+                    count++;
+                }
+                floatData[i] = count > 0 ? accum / count : 0;
+                offsetBuffer = nextOffsetBuffer;
+            }
+        }
+
+        // Float32 [-1,1] 转 Int16 Little Endian 原始 PCM
+        const pcmBuffer = new ArrayBuffer(floatData.length * 2);
+        const view = new DataView(pcmBuffer);
+        let offset = 0;
+        for (let i = 0; i < floatData.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, floatData[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+
+        // 返回原始 PCM 数据（不带 WAV 头），后端按讯飞要求以 raw L16 发送
+        return new Blob([pcmBuffer], { type: 'application/octet-stream' });
+    };
+
     // 语音识别回调
     const handleVoiceRecognition = async (audioBlob: Blob) => {
         try {
-            const audioFile = new File([audioBlob], 'voice.wav', { type: 'audio/wav' });
+            // 转换为 16kHz 单声道 PCM 原始数据，确保与科大讯飞 IAT 要求一致
+            const pcmBlob = await convertToPCM16k(audioBlob);
+            const audioFile = new File([pcmBlob], 'voice.pcm', { type: 'application/octet-stream' });
+
             const response = await voiceApi.recognize(audioFile);
 
             if (response.success && response.data) {
-                setUserInput(response.data.text);
-                setShowVoiceModal(false);
-                message.success('语音识别成功');
+                if (response.data.text && response.data.text.trim().length > 0) {
+                    setUserInput(response.data.text);
+                    setShowVoiceModal(false);
+                    message.success('语音识别成功');
+                } else {
+                    message.warning('没有识别到有效语音，请重试');
+                }
             }
         } catch (error) {
             console.error('Voice recognition failed:', error);
+            message.error('语音识别失败，请重试');
         }
     };
 
@@ -179,7 +233,7 @@ const CreatePlan: React.FC = () => {
                         <div className="step-content">
                             <h2>描述您的旅行需求</h2>
                             <p className="step-description">
-                                您可以用自然语言描述，例如："我想去日本，5天，预算1万元，喜欢美食和动漫，带孩子"
+                                您可以用自然语言描述，例如："我想去南京，5天，预算5000，喜欢美食，带孩子"
                             </p>
                             <TextArea
                                 rows={6}

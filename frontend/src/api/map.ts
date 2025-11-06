@@ -7,8 +7,8 @@ export interface SearchParams {
 }
 
 export interface RouteParams {
-    origin: string; // 'lat,lng'
-    destination: string; // 'lat,lng'
+    origin: string; // 'lng,lat'
+    destination: string; // 'lng,lat'
     mode?: 'driving' | 'walking' | 'transit' | 'bicycling';
 }
 
@@ -39,7 +39,7 @@ export const mapApi = {
 
     // 规划路线
     getRoute: (params: RouteParams) =>
-        request.get<any, ApiResponse<RouteResult>>('/api/map/route', { params }),
+        request.get<any, ApiResponse<{ route: RouteResult }>>('/api/map/route', { params }),
 
     // 地理编码
     geocode: (params: GeocodeParams) =>
