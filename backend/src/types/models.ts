@@ -67,6 +67,12 @@ export interface DailyItinerary {
     items: ItineraryItem[];
 }
 
+export interface GeneratedPlan {
+    title: string;
+    dailyItinerary: DailyItinerary[];
+}
+
+// ============= 费用管理 =============
 export interface BudgetBreakdown {
     交通: number;
     住宿: number;
@@ -75,13 +81,6 @@ export interface BudgetBreakdown {
     其他: number;
 }
 
-export interface GeneratedPlan {
-    title: string;
-    dailyItinerary: DailyItinerary[];
-    budgetBreakdown: BudgetBreakdown;
-}
-
-// ============= 费用管理 =============
 export interface Expense {
     id: string;
     plan_id: string;

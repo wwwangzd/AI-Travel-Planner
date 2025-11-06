@@ -119,9 +119,8 @@ const Home: React.FC = () => {
                         <Statistic
                             title="总预算"
                             value={plans.reduce((sum, p) => sum + (p.budget || 0), 0)}
-                            prefix={<DollarOutlined />}
-                            valueStyle={{ color: '#1890ff' }}
                             prefix="¥"
+                            valueStyle={{ color: '#1890ff' }}
                         />
                     </Card>
                 </Col>

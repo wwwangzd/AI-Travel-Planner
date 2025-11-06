@@ -26,7 +26,7 @@ export class LLMService {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.7,
+          temperature: 0.5,
           response_format: { type: 'json_object' }
         },
         {
@@ -80,14 +80,14 @@ export class LLMService {
    * 步骤2: 生成详细旅行计划
    */
   async generateTravelPlan(info: ExtractedTravelInfo): Promise<GeneratedPlan> {
-    const systemPrompt = `你是一个专业的旅行规划助手。根据用户提供的结构化信息，生成详细的旅行计划。
+    const systemPrompt = `你是一个专业的旅行规划助手。根据用户提供的结构化信息，生成简短旅行计划。
 
 要求：
 1. 返回严格的 JSON 格式数据
-2. 包含每日详细行程（交通、住宿、景点、餐饮）
+2. 包含每日行程（每天3-4项）
 3. 考虑时间合理性和地理位置
 4. 严格控制在预算范围内
-5. 充分考虑用户偏好
+5. 考虑用户偏好
 6. type 字段必须使用中文：交通、住宿、餐饮、景点、其他
 
 返回格式：
@@ -105,18 +105,11 @@ export class LLMService {
           "time": "HH:MM",
           "cost": 金额,
           "location": {"lat": 纬度, "lng": 经度},
-          "description": "描述"
+          "description": "描述（简短）"
         }
       ]
     }
-  ],
-  "budgetBreakdown": {
-    "交通": 金额,
-    "住宿": 金额,
-    "餐饮": 金额,
-    "景点": 金额,
-    "其他": 金额
-  }
+  ]
 }`;
 
     const userPrompt = `请生成旅行计划：

@@ -113,7 +113,6 @@ export class PlanController {
                     start_date: params.startDate,
                     end_date: params.endDate,
                     budget: params.budget,
-                    budget_breakdown: generatedPlan.budgetBreakdown,
                     travelers_count: params.travelersCount,
                     preferences: preferences,
                     status: 'draft'
@@ -161,8 +160,7 @@ export class PlanController {
                 data: {
                     planId: plan.id,
                     title: generatedPlan.title,
-                    itinerary: generatedPlan.dailyItinerary,
-                    budgetBreakdown: generatedPlan.budgetBreakdown
+                    itinerary: generatedPlan.dailyItinerary
                 }
             });
         } catch (error: any) {
