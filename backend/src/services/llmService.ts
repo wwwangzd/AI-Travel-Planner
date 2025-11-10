@@ -8,8 +8,8 @@ export class LLMService {
 
   constructor() {
     this.apiKey = process.env.LLM_API_KEY!;
-    this.baseUrl = process.env.LLM_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-    this.model = process.env.LLM_MODEL || 'qwen-flash';
+    this.baseUrl = process.env.LLM_BASE_URL;
+    this.model = process.env.LLM_MODEL;
 
     if (!this.apiKey) {
       throw new Error('LLM_API_KEY is not set');

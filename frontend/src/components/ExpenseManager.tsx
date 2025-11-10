@@ -98,10 +98,58 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ planId }) => {
         }
     };
 
+    // 将任意音频 Blob 转为 16kHz 单声道 PCM 原始数据
+    const convertToPCM16k = async (blob: Blob): Promise<Blob> => {
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+
+        // 仅取第一个声道
+        const channelData = decodedBuffer.getChannelData(0);
+        const sourceSampleRate = decodedBuffer.sampleRate;
+        const targetSampleRate = 16000;
+
+        // 若采样率已为 16k，直接使用；否则进行重采样（简单均值法，避免引入重型依赖）
+        let floatData: Float32Array;
+        if (sourceSampleRate === targetSampleRate) {
+            floatData = channelData;
+        } else {
+            const ratio = sourceSampleRate / targetSampleRate;
+            const newLength = Math.round(channelData.length / ratio);
+            floatData = new Float32Array(newLength);
+            let offsetBuffer = 0;
+            for (let i = 0; i < newLength; i++) {
+                const nextOffsetBuffer = Math.round((i + 1) * ratio);
+                let accum = 0;
+                let count = 0;
+                for (let j = offsetBuffer; j < nextOffsetBuffer && j < channelData.length; j++) {
+                    accum += channelData[j];
+                    count++;
+                }
+                floatData[i] = count > 0 ? accum / count : 0;
+                offsetBuffer = nextOffsetBuffer;
+            }
+        }
+
+        // Float32 [-1,1] 转 Int16 Little Endian 原始 PCM
+        const pcmBuffer = new ArrayBuffer(floatData.length * 2);
+        const view = new DataView(pcmBuffer);
+        let offset = 0;
+        for (let i = 0; i < floatData.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, floatData[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+
+        // 返回原始 PCM 数据（不带 WAV 头），后端按讯飞要求以 raw L16 发送
+        return new Blob([pcmBuffer], { type: 'application/octet-stream' });
+    };
+
     const handleVoiceExpense = async (audioBlob: Blob) => {
         try {
-            // 先识别语音
-            const audioFile = new File([audioBlob], 'voice.wav', { type: 'audio/wav' });
+            // 转换为 16kHz 单声道 PCM 原始数据，确保与科大讯飞 IAT 要求一致
+            const pcmBlob = await convertToPCM16k(audioBlob);
+            const audioFile = new File([pcmBlob], 'voice.pcm', { type: 'application/octet-stream' });
+            
             const voiceResponse = await voiceApi.recognize(audioFile);
 
             if (voiceResponse.success && voiceResponse.data) {

@@ -45,16 +45,11 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
 
     // 加载高德地图脚本
     useEffect(() => {
-        const apiKey = import.meta.env.VITE_AMAP_KEY || '';
-
-        if (!apiKey) {
-            console.warn('高德地图API Key未配置');
-            return;
-        }
+        const apiKey = import.meta.env.VITE_AMAP_KEY;
 
         // 设置安全密钥（如果需要）
         window._AMapSecurityConfig = {
-            securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE || '',
+            securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE,
         };
 
         const script = document.createElement('script');

@@ -7,8 +7,8 @@ export interface SearchParams {
 }
 
 export interface RouteParams {
-    origin: string; // 'lng,lat'
-    destination: string; // 'lng,lat'
+    origin: string;
+    destination: string;
     mode?: 'driving' | 'walking' | 'transit' | 'bicycling';
 }
 

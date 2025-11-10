@@ -18,7 +18,7 @@ AI 旅行规划师后端 API 服务
 - **数据库**: Supabase (PostgreSQL)
 - **认证**: 自定义 JWT + bcrypt
 - **外部服务**:
-  - LLM: 阿里云通义千问 (qwen-plus)
+  - LLM: 阿里云通义千问 (qwen-flash)
   - 语音识别: 科大讯飞语音听写 API
   - 地图: 高德地图 Web API
 
@@ -59,7 +59,7 @@ AMAP_KEY=your-amap-key
 # LLM API（通义千问）
 LLM_API_KEY=sk-your-api-key
 LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-LLM_MODEL=qwen-plus
+LLM_MODEL=qwen-flash
 ```
 
 ### 3. 外部服务配置
@@ -109,7 +109,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
 1. **基础表结构**：执行 `src/database/schema.sql` 文件内容
 2. **偏好表迁移**（如果已有旧版本）：执行 `src/database/migration_update_preferences.sql` 文件内容
 
-> 如果是全新项目，只需执行 `schema.sql` 即可。
+如果是全新项目，只需执行 `schema.sql` 即可。
 
 ### 5. 启动开发服务器
 
@@ -235,21 +235,6 @@ backend/
 ├── Dockerfile
 └── README.md
 ```
-
-## 安全注意事项
-
-⚠️ **重要**：
-
-- 使用 `SUPABASE_SERVICE_ROLE_KEY`（而非 SUPABASE_ANON_KEY）
-- `JWT_SECRET` 必须是强随机字符串（至少 64 字节）
-- **绝对不要**将 `.env` 文件提交到 Git
-- **绝对不要**将 API Key 硬编码到代码中
-- service_role key 只能在后端使用，不要暴露给前端
-
-## 相关文档
-
-- **设计文档**：`../设计文档.md` - 完整的系统设计和 API 接口说明
-- **需求文档**：`../需求文档.md` - 项目功能需求
 
 ## 许可证
 
