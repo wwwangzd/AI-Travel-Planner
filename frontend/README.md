@@ -113,17 +113,27 @@ frontend/
 │   │   └── map.ts        # 地图相关
 │   ├── components/       # 通用组件
 │   │   ├── MainLayout.tsx       # 主布局
+│   │   ├── MainLayout.css       # 主布局样式
 │   │   ├── PrivateRoute.tsx     # 路由守卫
 │   │   ├── TravelMap.tsx        # 地图组件
+│   │   ├── TravelMap.css        # 地图样式
 │   │   ├── VoiceRecorder.tsx    # 语音录制
-│   │   └── ExpenseManager.tsx   # 费用管理
+│   │   ├── VoiceRecorder.css    # 语音录制样式
+│   │   ├── ExpenseManager.tsx   # 费用管理
+│   │   └── ExpenseManager.css   # 费用管理样式
 │   ├── pages/            # 页面组件
 │   │   ├── Auth.tsx      # 登录/注册
+│   │   ├── Auth.css      # 登录/注册样式
 │   │   ├── Home.tsx      # 首页
+│   │   ├── Home.css      # 首页样式
 │   │   ├── CreatePlan.tsx      # 创建计划
+│   │   ├── CreatePlan.css      # 创建计划样式
 │   │   ├── PlanList.tsx        # 计划列表
+│   │   ├── PlanList.css        # 计划列表样式
 │   │   ├── PlanDetail.tsx      # 计划详情
-│   │   └── Preferences.tsx     # 偏好设置
+│   │   ├── PlanDetail.css      # 计划详情样式
+│   │   ├── Preferences.tsx     # 偏好设置
+│   │   └── Preferences.css     # 偏好设置样式
 │   ├── store/            # 状态管理
 │   │   ├── authStore.ts  # 认证状态
 │   │   └── planStore.ts  # 计划状态
@@ -131,14 +141,22 @@ frontend/
 │   │   └── index.ts
 │   ├── utils/            # 工具函数
 │   │   └── request.ts    # Axios 封装
+│   ├── assets/           # 资源文件
 │   ├── App.tsx           # 根组件
 │   ├── App.css           # 全局样式
 │   ├── main.tsx          # 入口文件
 │   └── index.css         # 基础样式
+├── .dockerignore         # Docker 忽略文件
 ├── .env                  # 环境变量（不提交到 Git）
+├── .gitignore            # Git 忽略文件
+├── Dockerfile            # Docker 镜像构建配置
+├── eslint.config.js      # ESLint 配置
 ├── index.html            # HTML 模板
+├── nginx.conf            # Nginx 配置（用于 Docker 部署）
 ├── package.json          # 依赖配置
 ├── tsconfig.json         # TypeScript 配置
+├── tsconfig.app.json     # TypeScript 应用配置
+├── tsconfig.node.json    # TypeScript Node 配置
 ├── vite.config.ts        # Vite 配置
 └── README.md             # 项目文档
 ```

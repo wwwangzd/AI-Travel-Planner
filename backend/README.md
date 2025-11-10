@@ -217,23 +217,28 @@ backend/
 │   │   ├── auth.ts                   # JWT 认证
 │   │   └── errorHandler.ts           # 错误处理
 │   ├── routes/               # 路由
-│   │   ├── auth.ts
-│   │   ├── plans.ts
-│   │   ├── expenses.ts
-│   │   ├── preferences.ts
-│   │   ├── voice.ts
-│   │   └── map.ts
+│   │   ├── auth.ts                   # 认证路由
+│   │   ├── plans.ts                  # 行程路由
+│   │   ├── expenses.ts               # 费用路由
+│   │   ├── preferences.ts            # 偏好路由
+│   │   ├── voice.ts                  # 语音路由
+│   │   └── map.ts                    # 地图路由
 │   ├── database/             # 数据库
 │   │   ├── supabase.ts                       # Supabase 客户端
 │   │   ├── schema.sql                        # 数据库表结构
-│   │   └── migration_update_preferences.sql  # 偏好表迁移
+│   │   ├── migration_update_preferences.sql  # 偏好表迁移
+│   │   └── migration_add_fields.sql          # 字段迁移
 │   ├── types/                # 类型定义
-│   │   └── models.ts
+│   │   └── models.ts                 # 数据模型类型
 │   └── index.ts              # 应用入口
-├── package.json
-├── tsconfig.json
-├── Dockerfile
-└── README.md
+├── .dockerignore             # Docker 忽略文件
+├── .env                      # 环境变量（不提交到 Git）
+├── .gitignore                # Git 忽略文件
+├── Dockerfile                # Docker 镜像构建配置
+├── package.json              # 依赖配置
+├── package-lock.json         # 依赖锁定文件
+├── tsconfig.json             # TypeScript 配置
+└── README.md                 # 项目文档
 ```
 
 ## 许可证

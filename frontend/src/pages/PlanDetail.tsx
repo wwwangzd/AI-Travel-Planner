@@ -198,7 +198,7 @@ const PlanDetail: React.FC = () => {
             <Row gutter={[16, 16]} className="main-content-row">
                 {/* 左侧：地图 */}
                 <Col xs={24} lg={14}>
-                    <Card className="map-card" bodyStyle={{ padding: 0, height: '600px' }}>
+                    <Card className="map-card" styles={{ body: { padding: 0, height: '600px' } }}>
                         <TravelMap
                             itinerary={itinerary}
                             selectedDay={selectedDay}
@@ -211,7 +211,7 @@ const PlanDetail: React.FC = () => {
                     <Card
                         className="itinerary-card"
                         title="行程安排"
-                        bodyStyle={{ padding: 0, maxHeight: '600px', overflow: 'auto' }}
+                        styles={{ body: { padding: 0, maxHeight: '600px', overflow: 'auto' } }}
                     >
                         <Tabs
                             activeKey={selectedDay.toString()}

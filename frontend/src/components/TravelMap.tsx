@@ -27,6 +27,7 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
     const [navMode, setNavMode] = useState<'walking' | 'transit' | 'driving'>('walking');
     const [selecting, setSelecting] = useState<0 | 1 | 2>(0); // 0:未选,1:已选起点,2:已选起点终点
     const [mapLoaded, setMapLoaded] = useState(false);
+    const [mapReady, setMapReady] = useState(false); // 地图完全初始化完成
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
     // 校验经纬度有效性，避免传入 NaN 导致 AMap 报错
@@ -47,36 +48,58 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
     useEffect(() => {
         const apiKey = import.meta.env.VITE_AMAP_KEY;
 
-        // 设置安全密钥（如果需要）
+        // 设置安全密钥
         window._AMapSecurityConfig = {
             securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE,
         };
 
-        const script = document.createElement('script');
-        script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
-        script.async = true;
-        script.onload = () => {
+        // 检查AMap是否已加载
+        if (window.AMap) {
             setMapLoaded(true);
-        };
-        script.onerror = () => {
-            message.error('地图加载失败，请检查网络连接');
-        };
+            return;
+        }
 
-        if (!document.querySelector(`script[src^="https://webapi.amap.com/maps"]`)) {
-            document.head.appendChild(script);
+        const existingScript = document.querySelector(`script[src^="https://webapi.amap.com/maps"]`);
+
+        if (existingScript) {
+            // 脚本标签存在但可能还在加载中，轮询检查window.AMap
+            const checkInterval = setInterval(() => {
+                if (window.AMap) {
+                    setMapLoaded(true);
+                    clearInterval(checkInterval);
+                }
+            }, 100);
+
+            // 超时保护：10秒后停止检查
+            const timeout = setTimeout(() => {
+                clearInterval(checkInterval);
+                if (!window.AMap) {
+                    message.error('地图加载超时');
+                }
+            }, 10000);
+
+            return () => {
+                clearInterval(checkInterval);
+                clearTimeout(timeout);
+            };
         } else {
-            setMapLoaded(true);
+            // 创建并加载地图脚本
+            const script = document.createElement('script');
+            script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
+            script.async = true;
+            script.onload = () => setMapLoaded(true);
+            script.onerror = () => message.error('地图加载失败，请检查网络连接');
+            document.head.appendChild(script);
         }
 
         return () => {
-            // 清理地图实例与监听器
-            if (resizeObserverRef.current && mapRef.current) {
-                try { resizeObserverRef.current.unobserve(mapRef.current); } catch { }
-                try { resizeObserverRef.current.disconnect(); } catch { }
-                resizeObserverRef.current = null;
-            }
+            // 组件卸载时清理地图实例
             if (mapInstanceRef.current) {
-                try { mapInstanceRef.current.destroy(); } catch { }
+                try {
+                    mapInstanceRef.current.destroy();
+                } catch (e) {
+                    console.error('Map destroy error:', e);
+                }
                 mapInstanceRef.current = null;
             }
         };
@@ -84,35 +107,56 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
 
     // 初始化地图
     useEffect(() => {
-        if (!mapLoaded || !mapRef.current || !window.AMap) return;
+        if (!mapLoaded || !mapRef.current || !window.AMap || mapInstanceRef.current) {
+            return;
+        }
 
         const map = new window.AMap.Map(mapRef.current, {
             zoom: 12,
-            center: [116.397428, 39.90923], // 默认北京
+            center: [116.397428, 39.90923],
             viewMode: '3D',
             pitch: 30,
             skyColor: '#e6f7ff',
+            resizeEnable: true,
         });
 
         mapInstanceRef.current = map;
 
-        // 等下一帧触发一次 resize，避免容器初始为 0 尺寸导致 Pixel(NaN, NaN)
-        requestAnimationFrame(() => {
-            try { map.resize(); } catch { }
+        // 地图加载完成后自动调整大小并标记为就绪
+        map.on('complete', () => {
+            try {
+                map.resize();
+                setMapReady(true); // 地图初始化完成，可以添加标记了
+            } catch (e) {
+                console.error('Map resize error:', e);
+            }
         });
 
-        // 监听容器尺寸变化，自动触发地图自适应
-        if (mapRef.current && typeof ResizeObserver !== 'undefined') {
+        // 监听容器尺寸变化
+        if (typeof ResizeObserver !== 'undefined' && mapRef.current) {
             resizeObserverRef.current = new ResizeObserver(() => {
-                try { map.resize(); } catch { }
+                if (mapInstanceRef.current) {
+                    try {
+                        mapInstanceRef.current.resize();
+                    } catch (e) {
+                        console.error('Map resize error:', e);
+                    }
+                }
             });
             resizeObserverRef.current.observe(mapRef.current);
         }
+
+        return () => {
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+                resizeObserverRef.current = null;
+            }
+        };
     }, [mapLoaded]);
 
     // 更新地图标记
     useEffect(() => {
-        if (!mapInstanceRef.current || !window.AMap) return;
+        if (!mapInstanceRef.current || !window.AMap || !mapReady) return;
 
         // 清除旧标记
         markersRef.current.forEach((marker) => marker.setMap(null));
@@ -145,66 +189,93 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
 
         if (validItems.length === 0) return;
 
-        // 添加标记
+        // 标记颜色映射
+        const getMarkerColor = (type?: string) => {
+            const colors: Record<string, string> = {
+                交通: '#1890ff',
+                住宿: '#52c41a',
+                餐饮: '#fa8c16',
+                景点: '#f5222d',
+                其他: '#8c8c8c',
+            };
+            return colors[type || '其他'] || '#667eea';
+        };
+
+        // 按位置分组，处理重复经纬度
+        const locationGroups = new Map<string, { items: ItineraryItem[]; indices: number[] }>();
         validItems.forEach((item, index) => {
             if (!item.location) return;
-
             const lng = typeof item.location.lng === 'string' ? Number(item.location.lng) : item.location.lng;
             const lat = typeof item.location.lat === 'string' ? Number(item.location.lat) : item.location.lat;
+            const key = `${lng.toFixed(6)},${lat.toFixed(6)}`; // 精确到6位小数
+
+            if (!locationGroups.has(key)) {
+                locationGroups.set(key, { items: [], indices: [] });
+            }
+            locationGroups.get(key)!.items.push(item);
+            locationGroups.get(key)!.indices.push(index + 1);
+        });
+
+        // 为每个位置组添加标记
+        locationGroups.forEach((group, locationKey) => {
+            const [lngStr, latStr] = locationKey.split(',');
+            const lng = Number(lngStr);
+            const lat = Number(latStr);
             const position = [lng, lat];
 
-            // 根据类型选择图标颜色
-            const getMarkerColor = (type?: string) => {
-                const colors: Record<string, string> = {
-                    交通: '#1890ff',
-                    住宿: '#52c41a',
-                    餐饮: '#fa8c16',
-                    景点: '#f5222d',
-                    其他: '#8c8c8c',
-                };
-                return colors[type || '其他'] || '#667eea';
-            };
+            const firstItem = group.items[0];
+            const allTitles = group.items.map(item => item.title).join(', ');
+            const indices = group.indices;
 
             const marker = new window.AMap.Marker({
                 position,
-                title: item.title,
+                title: allTitles,
                 label: {
-                    content: `<div class="map-label">${index + 1}</div>`,
+                    content: `<div class="map-label">${indices.join(',')}</div>`,
                     direction: 'top',
                 },
-                extData: item,
+                extData: { items: group.items, indices },
             });
 
             // 自定义标记样式
+            const markerColor = getMarkerColor(firstItem.type || firstItem.item_type);
+            const numberDisplay = indices.length > 1 ? indices.join(',') : indices[0];
             const content = `
-        <div class="custom-marker" style="background-color: ${getMarkerColor(item.type || item.item_type)}">
-          <div class="marker-number">${index + 1}</div>
-        </div>
-      `;
+                <div class="custom-marker ${indices.length > 1 ? 'multi-marker' : ''}" style="background-color: ${markerColor}">
+                    <div class="marker-number">${numberDisplay}</div>
+                </div>
+            `;
             marker.setContent(content);
 
-            // 点击事件
+            // 标记点击事件处理
             marker.on('click', async () => {
-                if (onMarkerClick) {
-                    onMarkerClick(item);
+                // 如果有多个项目，只通知第一个（或者可以根据需求调整）
+                if (group.items.length > 1) {
+                    onMarkerClick?.(firstItem);
+                    message.info(`该位置有${group.items.length}个项目：${allTitles}`);
+                } else {
+                    onMarkerClick?.(firstItem);
                 }
 
-                // 导航选点：先选起点，再选终点
-                const point = { lng, lat, title: item.title };
-                const curr = selectedPointsRef.current;
-                if (curr.length < 1) {
+                // 导航路线选点逻辑
+                const point = { lng, lat, title: allTitles };
+                const currentPoints = selectedPointsRef.current;
+
+                if (currentPoints.length === 0) {
+                    // 选择起点
                     selectedPointsRef.current = [point];
                     setSelecting(1);
-                    message.info(`已选择起点：${item.title}`);
-                } else if (curr.length === 1) {
-                    const last = curr[0];
-                    if (last.lng === point.lng && last.lat === point.lat) return;
-                    selectedPointsRef.current = [last, point];
+                    message.info(`已选择起点：${allTitles}`);
+                } else if (currentPoints.length === 1) {
+                    // 选择终点
+                    const [startPoint] = currentPoints;
+                    if (startPoint.lng === lng && startPoint.lat === lat) return; // 同一个点
+                    selectedPointsRef.current = [startPoint, point];
                     setSelecting(2);
                     await drawRoute();
                 } else {
-                    // 已有两点，则将第二点作为新起点
-                    selectedPointsRef.current = [curr[1], point];
+                    // 已有起点和终点，将当前终点设为新起点
+                    selectedPointsRef.current = [currentPoints[1], point];
                     setSelecting(2);
                     await drawRoute();
                 }
@@ -214,57 +285,63 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
             markersRef.current.push(marker);
         });
 
-        // 调整视野以包含所有标记（使用 setFitView 更稳健）
+        // 自动调整视野以包含所有标记
         if (markersRef.current.length > 0) {
             try {
                 mapInstanceRef.current.setFitView(markersRef.current, false, [80, 80, 80, 80]);
             } catch (e) {
-                try { mapInstanceRef.current.resize(); } catch { }
+                console.error('SetFitView error:', e);
             }
         }
-    }, [itinerary, selectedDay, onMarkerClick]);
+    }, [itinerary, selectedDay, mapReady]);
 
-    // 绘制路线（使用后端聚合后的 data.route.polyline）
+    // 绘制路线
     const drawRoute = async () => {
         if (!mapInstanceRef.current) return;
-        const pts = selectedPointsRef.current;
-        if (pts.length < 2) return;
-        const [start, end] = pts;
+
+        const points = selectedPointsRef.current;
+        if (points.length < 2) return;
+
+        const [start, end] = points;
 
         try {
-            const origin = `${start.lng},${start.lat}`; // lng,lat 顺序
+            const origin = `${start.lng},${start.lat}`;
             const destination = `${end.lng},${end.lat}`;
-            const resp = await mapApi.getRoute({ origin, destination, mode: navMode });
+            const response = await mapApi.getRoute({ origin, destination, mode: navMode });
 
-            if (!resp.success || !resp.data || !(resp.data as any).route) {
+            if (!response.success || !response.data || !(response.data as any).route) {
                 message.error('路线规划失败');
                 return;
             }
-            const route = (resp.data as any).route;
-            const polylineStr: string | undefined = route.polyline;
+
+            const route = (response.data as any).route;
+            const polylineStr = route.polyline;
+
             if (!polylineStr) {
                 message.warning('未获取到有效路线');
                 return;
             }
 
+            // 解析路线坐标
             const path = polylineStr
                 .split(';')
-                .map((p: string) => p.split(',').map(Number))
-                .filter((arr: number[]) => arr.length === 2 && arr.every(Number.isFinite));
-            if (!path.length) {
+                .map((point: string) => point.split(',').map(Number))
+                .filter((coords: number[]) => coords.length === 2 && coords.every(Number.isFinite));
+
+            if (path.length === 0) {
                 message.warning('未获取到有效路线');
                 return;
             }
 
             // 清除旧路线
             if (routePolylineRef.current) {
-                try { routePolylineRef.current.setMap(null); } catch { }
+                routePolylineRef.current.setMap(null);
                 routePolylineRef.current = null;
             }
 
             // 绘制新路线
             const polyline = new window.AMap.Polyline({
-                path: path.map(([lng, lat]: number[]) => [lng, lat]),
+                path,
                 strokeColor: '#667eea',
                 strokeWeight: 5,
                 strokeOpacity: 0.9,
@@ -272,23 +349,26 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
             polyline.setMap(mapInstanceRef.current);
             routePolylineRef.current = polyline;
 
+            // 调整视野以显示完整路线
             try {
                 mapInstanceRef.current.setFitView([polyline], false, [80, 80, 80, 80]);
-            } catch { }
+            } catch (e) {
+                console.error('SetFitView error:', e);
+            }
 
-            // 绘制完成后自动清空起止点选择，保留已绘制的路线
+            // 清空起止点选择状态
             selectedPointsRef.current = [];
             setSelecting(0);
-            message.success('已绘制路线，起止点已清空');
-        } catch (e) {
-            console.error('drawRoute error', e);
+            message.success('路线绘制完成');
+        } catch (error) {
+            console.error('Route drawing error:', error);
             message.error('路线规划请求失败');
         }
     };
 
-    // 切换模式时，若已选两点则重绘
+    // 切换导航模式时重新绘制路线
     useEffect(() => {
-        if (selecting === 2) {
+        if (selecting === 2 && selectedPointsRef.current.length === 2) {
             drawRoute();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -322,17 +402,20 @@ const TravelMap: React.FC<TravelMapProps> = ({ itinerary, selectedDay, onMarkerC
                     {selecting === 1 && <span>已选起点，点击另一标记选择终点</span>}
                     {selecting === 2 && <span>已绘制起终点路线</span>}
                 </div>
-                <div>
-                    <Button size="small" onClick={() => {
+                <Button
+                    size="small"
+                    onClick={() => {
                         selectedPointsRef.current = [];
                         setSelecting(0);
                         if (routePolylineRef.current) {
-                            try { routePolylineRef.current.setMap(null); } catch { }
+                            routePolylineRef.current.setMap(null);
                             routePolylineRef.current = null;
                         }
                         message.success('已清空路线');
-                    }}>清空路线</Button>
-                </div>
+                    }}
+                >
+                    清空路线
+                </Button>
             </div>
         </div>
     );
