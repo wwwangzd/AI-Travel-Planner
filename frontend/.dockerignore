@@ -3,6 +3,5 @@ dist
 .git
 .gitignore
 *.log
-.env
 .DS_Store
 README.md

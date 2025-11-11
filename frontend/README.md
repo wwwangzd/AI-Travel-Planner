@@ -147,7 +147,7 @@ frontend/
 │   ├── main.tsx          # 入口文件
 │   └── index.css         # 基础样式
 ├── .dockerignore         # Docker 忽略文件
-├── .env                  # 环境变量（不提交到 Git）
+├── .env                  # 环境变量（构建到镜像中）
 ├── .gitignore            # Git 忽略文件
 ├── Dockerfile            # Docker 镜像构建配置
 ├── eslint.config.js      # ESLint 配置

@@ -232,7 +232,7 @@ backend/
 │   │   └── models.ts                 # 数据模型类型
 │   └── index.ts              # 应用入口
 ├── .dockerignore             # Docker 忽略文件
-├── .env                      # 环境变量（不提交到 Git）
+├── .env                      # 环境变量（需挂载到容器）
 ├── .gitignore                # Git 忽略文件
 ├── Dockerfile                # Docker 镜像构建配置
 ├── package.json              # 依赖配置
